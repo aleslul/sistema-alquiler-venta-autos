@@ -1,17 +1,20 @@
 package com.becerra.alquilerventa.controlador;
-
 import com.becerra.alquilerventa.dao.PersonaDAO;
 import com.becerra.alquilerventa.dao.impl.PersonaDAOImpl;
+import com.becerra.alquilerventa.modelo.ClienteJuridico;
+import com.becerra.alquilerventa.modelo.ClienteNatural;
 import com.becerra.alquilerventa.modelo.Persona;
+import com.becerra.alquilerventa.modelo.Trabajador;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -102,7 +105,7 @@ public class PersonaServlet extends HttpServlet {
             }
             redirigirAlListado(request, response);
         } catch (SQLException e) {
-            errores.add("Error al guardar (verifique que el Documento o Correo no estén duplicados): " + e.getMessage());
+            errores.add("Error al guardar (verifique que el Documento, el Correo o el Código de empleado no estén duplicados): " + e.getMessage());
             mostrarFormulario(request, response, p, errores);
         }
     }
@@ -126,16 +129,33 @@ public class PersonaServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setAttribute("persona", persona);
         request.setAttribute("errores", errores);
+        request.setAttribute("tipoRegistro", persona.getCodigoTipo());
+        request.setAttribute("clienteNatural",
+                persona instanceof ClienteNatural c ? c : new ClienteNatural());
+        request.setAttribute("clienteJuridico",
+                persona instanceof ClienteJuridico c ? c : new ClienteJuridico());
+        request.setAttribute("trabajador",
+                persona instanceof Trabajador t ? t : new Trabajador());
+
         try {
             request.setAttribute("tiposDocumento", personaDAO.listarTiposDocumento());
+            request.setAttribute("rolesTrabajador", personaDAO.listarRolesTrabajador());
+            request.setAttribute("sucursales", personaDAO.listarSucursales());
         } catch (SQLException e) {
-            request.setAttribute("error", "No se pudo cargar los tipos de documento: " + e.getMessage());
+            request.setAttribute("error", "No se pudieron cargar las listas desplegables: " + e.getMessage());
         }
         request.getRequestDispatcher(VISTA_FORMULARIO).forward(request, response);
     }
 
+
     private Persona leerFormulario(HttpServletRequest request, List<String> errores) {
-        Persona p = new Persona();
+        Persona p = switch (texto(request, "tipoRegistro")) {
+            case Persona.CLIENTE_NATURAL -> leerClienteNatural(request, errores);
+            case Persona.CLIENTE_JURIDICO -> leerClienteJuridico(request, errores);
+            case Persona.TRABAJADOR -> leerTrabajador(request, errores);
+            default -> new Persona();
+        };
+
         String id = request.getParameter("personaId");
         if (id != null && !id.isBlank()) {
             p.setPersonaId(Integer.parseInt(id));
@@ -160,6 +180,69 @@ public class PersonaServlet extends HttpServlet {
         if (p.getEstadoUsuario().isEmpty()) errores.add("Seleccione el estado del usuario.");
 
         return p;
+    }
+
+    private ClienteNatural leerClienteNatural(HttpServletRequest request, List<String> errores) {
+        ClienteNatural c = new ClienteNatural();
+        c.setNombres(texto(request, "cn_nombres"));
+        c.setApellidos(texto(request, "cn_apellidos"));
+        c.setFechaNacimiento(fecha(request, "cn_fechaNacimiento", "La fecha de nacimiento no es válida.", errores));
+        c.setLicenciaConducir(texto(request, "cn_licencia"));
+        c.setFechaVencimientoLicencia(fecha(request, "cn_fechaVencLicencia", "La fecha de vencimiento de la licencia no es válida.", errores));
+
+        if (c.getNombres().isEmpty()) errores.add("Los nombres del cliente son obligatorios.");
+        if (c.getApellidos().isEmpty()) errores.add("Los apellidos del cliente son obligatorios.");
+        if (c.getFechaNacimiento() == null && texto(request, "cn_fechaNacimiento").isEmpty()) {
+            errores.add("La fecha de nacimiento es obligatoria.");
+        }
+        return c;
+    }
+
+    private ClienteJuridico leerClienteJuridico(HttpServletRequest request, List<String> errores) {
+        ClienteJuridico c = new ClienteJuridico();
+        c.setRazonSocial(texto(request, "cj_razonSocial"));
+        c.setRepresentanteLegal(texto(request, "cj_representante"));
+        c.setGiroNegocio(texto(request, "cj_giro"));
+
+        if (c.getRazonSocial().isEmpty()) errores.add("La razón social es obligatoria.");
+        if (c.getRepresentanteLegal().isEmpty()) errores.add("El representante legal es obligatorio.");
+        return c;
+    }
+
+    private Trabajador leerTrabajador(HttpServletRequest request, List<String> errores) {
+        Trabajador t = new Trabajador();
+        t.setNombres(texto(request, "tr_nombres"));
+        t.setApellidos(texto(request, "tr_apellidos"));
+        t.setCodigoEmpleado(texto(request, "tr_codigo"));
+
+        try {
+            t.setSucursalId(Integer.parseInt(texto(request, "tr_sucursalId")));
+            if (t.getSucursalId() <= 0) errores.add("Seleccione una sucursal.");
+        } catch (NumberFormatException e) {
+            errores.add("Seleccione una sucursal.");
+        }
+        try {
+            t.setRolTrabajadorId(Integer.parseInt(texto(request, "tr_rolId")));
+            if (t.getRolTrabajadorId() <= 0) errores.add("Seleccione un rol de trabajador.");
+        } catch (NumberFormatException e) {
+            errores.add("Seleccione un rol de trabajador.");
+        }
+
+        if (t.getNombres().isEmpty()) errores.add("Los nombres del trabajador son obligatorios.");
+        if (t.getApellidos().isEmpty()) errores.add("Los apellidos del trabajador son obligatorios.");
+        if (t.getCodigoEmpleado().isEmpty()) errores.add("El código de empleado es obligatorio.");
+        return t;
+    }
+
+    private LocalDate fecha(HttpServletRequest request, String nombre, String mensajeError, List<String> errores) {
+        String valor = texto(request, nombre);
+        if (valor.isEmpty()) return null;
+        try {
+            return LocalDate.parse(valor);
+        } catch (DateTimeParseException e) {
+            errores.add(mensajeError);
+            return null;
+        }
     }
 
     private String texto(HttpServletRequest request, String nombre) {

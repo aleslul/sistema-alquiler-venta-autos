@@ -9,6 +9,9 @@ public class Trabajador extends Persona {
 
     public Trabajador() {}
 
+    @Override
+    public String getCodigoTipo() { return TRABAJADOR; }
+
     public int getTrabajadorId() { return getPersonaId(); }
     public void setTrabajadorId(int trabajadorId) { setPersonaId(trabajadorId); }
     public int getSucursalId() { return sucursalId; }
