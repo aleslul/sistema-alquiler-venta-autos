@@ -51,7 +51,17 @@
                         <td><c:out value="${v.nombreTransmision}" /></td>
                         <td><c:out value="${v.nombreCombustible}" /></td>
                         <td><c:out value="${v.nombreSucursal}" /></td>
-                        <td><c:out value="${v.modalidad}" /></td>
+                        <td>
+                            <strong><c:out value="${v.modalidad}" /></strong>
+                            <c:choose>
+                                <c:when test="${v.modalidad == 'Venta' and v.precioVenta != null}">
+                                    <br><small>S/ <fmt:formatNumber value="${v.precioVenta}" minFractionDigits="2" maxFractionDigits="2"/></small>
+                                </c:when>
+                                <c:when test="${v.modalidad == 'Alquiler' and v.kilometrajeActual != null}">
+                                    <br><small>${v.kilometrajeActual} km</small>
+                                </c:when>
+                            </c:choose>
+                        </td>
                         <td><span class="badge ${v.nombreEstado == 'Disponible' ? 'badge-activo' : 'badge-inactivo'}"><c:out value="${v.nombreEstado}" /></span></td>
                         <td>
                             <div class="acciones">

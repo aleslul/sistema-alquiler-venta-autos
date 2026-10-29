@@ -3,6 +3,8 @@ package com.becerra.alquilerventa.controlador;
 import com.becerra.alquilerventa.dao.VehiculoDAO;
 import com.becerra.alquilerventa.dao.impl.VehiculoDAOImpl;
 import com.becerra.alquilerventa.modelo.Vehiculo;
+import com.becerra.alquilerventa.modelo.VehiculoVenta;
+import com.becerra.alquilerventa.modelo.VehiculoAlquiler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -140,42 +142,75 @@ public class VehiculoServlet extends HttpServlet {
     }
 
     private Vehiculo leerFormulario(HttpServletRequest request, List<String> errores) {
-        Vehiculo v = new Vehiculo();
+        String modalidad = texto(request, "modalidad");
+        Vehiculo v;
+
+        if ("Venta".equals(modalidad)) {
+            VehiculoVenta vv = new VehiculoVenta();
+            vv.setModalidad("Venta");
+            try {
+                vv.setPrecioVenta(new java.math.BigDecimal(texto(request, "precioVenta")));
+                if (vv.getPrecioVenta().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                    errores.add("El precio de venta debe ser mayor a 0.");
+                }
+            } catch (NumberFormatException e) {
+                errores.add("El precio de venta es obligatorio para vehículos en venta.");
+            }
+            vv.setCondicion(texto(request, "condicion"));
+            try {
+                vv.setMesesGarantia(Integer.parseInt(texto(request, "mesesGarantia")));
+            } catch (NumberFormatException e) {
+                errores.add("Los meses de garantía son obligatorios.");
+            }
+            v = vv;
+        } else {
+            VehiculoAlquiler va = new VehiculoAlquiler();
+            va.setModalidad("Alquiler");
+            String tarifaTxt = texto(request, "tarifaDiariaEspecifica");
+            if (!tarifaTxt.isEmpty()) {
+                try {
+                    va.setTarifaDiariaEspecifica(new java.math.BigDecimal(tarifaTxt));
+                } catch (NumberFormatException e) {
+                    errores.add("La tarifa diaria no es válida.");
+                }
+            }
+            try {
+                va.setKilometrajeActual(Integer.parseInt(texto(request, "kilometrajeActual")));
+            } catch (NumberFormatException e) {
+                errores.add("El kilometraje actual es obligatorio para alquiler.");
+            }
+            try {
+                va.setDepositoGarantiaBase(new java.math.BigDecimal(texto(request, "depositoGarantiaBase")));
+            } catch (NumberFormatException e) {
+                errores.add("El depósito de garantía es obligatorio para alquiler.");
+            }
+            v = va;
+        }
+
+        // Leer ID si es edición
         String id = request.getParameter("vehiculoId");
         if (id != null && !id.isBlank()) {
             v.setVehiculoId(Integer.parseInt(id));
         }
 
-        try { v.setCategoriaId(Integer.parseInt(texto(request, "categoriaId"))); } catch (NumberFormatException e) { errores.add("Seleccione una categoría."); }
-        try { v.setMarcaId(Integer.parseInt(texto(request, "marcaId"))); } catch (NumberFormatException e) { errores.add("Seleccione una marca."); }
-        try { v.setEstadoVehiculoId(Integer.parseInt(texto(request, "estadoVehiculoId"))); } catch (NumberFormatException e) { errores.add("Seleccione un estado."); }
-        try { v.setTipoTransmisionId(Integer.parseInt(texto(request, "tipoTransmisionId"))); } catch (NumberFormatException e) { errores.add("Seleccione una transmisión."); }
-        try { v.setTipoCombustibleId(Integer.parseInt(texto(request, "tipoCombustibleId"))); } catch (NumberFormatException e) { errores.add("Seleccione un combustible."); }
-        try { v.setSucursalActualId(Integer.parseInt(texto(request, "sucursalActualId"))); } catch (NumberFormatException e) { errores.add("Seleccione una sucursal."); }
+        // Leer atributos comunes
+        try { v.setCategoriaId(Integer.parseInt(texto(request, "categoriaId"))); } catch (Exception e) { errores.add("Seleccione una categoría."); }
+        try { v.setMarcaId(Integer.parseInt(texto(request, "marcaId"))); } catch (Exception e) { errores.add("Seleccione una marca."); }
+        try { v.setEstadoVehiculoId(Integer.parseInt(texto(request, "estadoVehiculoId"))); } catch (Exception e) { errores.add("Seleccione un estado."); }
+        try { v.setTipoTransmisionId(Integer.parseInt(texto(request, "tipoTransmisionId"))); } catch (Exception e) { errores.add("Seleccione una transmisión."); }
+        try { v.setTipoCombustibleId(Integer.parseInt(texto(request, "tipoCombustibleId"))); } catch (Exception e) { errores.add("Seleccione un combustible."); }
+        try { v.setSucursalActualId(Integer.parseInt(texto(request, "sucursalActualId"))); } catch (Exception e) { errores.add("Seleccione una sucursal."); }
 
         v.setPlaca(texto(request, "placa"));
         v.setModelo(texto(request, "modelo"));
-        v.setModalidad(texto(request, "modalidad"));
         v.setAireAcondicionado("true".equals(request.getParameter("aireAcondicionado")) || "on".equals(request.getParameter("aireAcondicionado")));
 
         if (v.getPlaca().isEmpty()) errores.add("La placa es obligatoria.");
         if (v.getModelo().isEmpty()) errores.add("El modelo es obligatorio.");
-        if (v.getModalidad().isEmpty()) errores.add("Seleccione la modalidad (Alquiler o Venta).");
 
-        try {
-            v.setAnio(Integer.parseInt(texto(request, "anio")));
-            if (v.getAnio() < 1990 || v.getAnio() > 2028) errores.add("Ingrese un año válido.");
-        } catch (NumberFormatException e) { errores.add("El año no es válido."); }
-
-        try {
-            v.setNumPasajeros(Integer.parseInt(texto(request, "numPasajeros")));
-            if (v.getNumPasajeros() <= 0) errores.add("El número de pasajeros debe ser mayor a 0.");
-        } catch (NumberFormatException e) { errores.add("Número de pasajeros inválido."); }
-
-        try {
-            v.setNumPuertas(Integer.parseInt(texto(request, "numPuertas")));
-            if (v.getNumPuertas() <= 0) errores.add("El número de puertas debe ser mayor a 0.");
-        } catch (NumberFormatException e) { errores.add("Número de puertas inválido."); }
+        try { v.setAnio(Integer.parseInt(texto(request, "anio"))); } catch (Exception e) { errores.add("Año no válido."); }
+        try { v.setNumPasajeros(Integer.parseInt(texto(request, "numPasajeros"))); } catch (Exception e) { errores.add("Pasajeros no válidos."); }
+        try { v.setNumPuertas(Integer.parseInt(texto(request, "numPuertas"))); } catch (Exception e) { errores.add("Puertas no válidas."); }
 
         return v;
     }

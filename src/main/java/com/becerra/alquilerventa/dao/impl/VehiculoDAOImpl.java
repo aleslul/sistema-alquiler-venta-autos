@@ -8,6 +8,7 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,46 +47,102 @@ public class VehiculoDAOImpl implements VehiculoDAO {
 
     @Override
     public void insertar(Vehiculo v) throws SQLException {
-        String sql = "{CALL sp_insertar_vehiculo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall(sql)) {
-            cs.setInt(1, v.getCategoriaId());
-            cs.setInt(2, v.getMarcaId());
-            cs.setInt(3, v.getEstadoVehiculoId());
-            cs.setInt(4, v.getTipoTransmisionId());
-            cs.setInt(5, v.getTipoCombustibleId());
-            cs.setInt(6, v.getSucursalActualId());
-            cs.setString(7, v.getPlaca());
-            cs.setString(8, v.getModelo());
-            cs.setInt(9, v.getAnio());
-            cs.setInt(10, v.getNumPasajeros());
-            cs.setInt(11, v.getNumPuertas());
-            cs.setBoolean(12, v.isAireAcondicionado());
-            cs.setString(13, v.getModalidad());
-            cs.executeUpdate();
+        String sql = "{CALL sp_insertar_vehiculo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+        try (Connection cn = Conexion.getConexion()) {
+            cn.setAutoCommit(false);
+            try (CallableStatement cs = cn.prepareCall(sql)) {
+                cs.setInt(1, v.getCategoriaId());
+                cs.setInt(2, v.getMarcaId());
+                cs.setInt(3, v.getEstadoVehiculoId());
+                cs.setInt(4, v.getTipoTransmisionId());
+                cs.setInt(5, v.getTipoCombustibleId());
+                cs.setInt(6, v.getSucursalActualId());
+                cs.setString(7, v.getPlaca());
+                cs.setString(8, v.getModelo());
+                cs.setInt(9, v.getAnio());
+                cs.setInt(10, v.getNumPasajeros());
+                cs.setInt(11, v.getNumPuertas());
+                cs.setBoolean(12, v.isAireAcondicionado());
+                cs.setString(13, v.getModalidad());
+                cs.registerOutParameter(14, Types.INTEGER);
+                cs.executeUpdate();
+
+                int nuevoId = cs.getInt(14);
+                v.setVehiculoId(nuevoId);
+
+                guardarModalidadEspecifica(cn, v);
+                cn.commit();
+            } catch (SQLException e) {
+                cn.rollback();
+                throw e;
+            } finally {
+                cn.setAutoCommit(true);
+            }
         }
     }
 
     @Override
     public void actualizar(Vehiculo v) throws SQLException {
         String sql = "{CALL sp_actualizar_vehiculo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall(sql)) {
-            cs.setInt(1, v.getVehiculoId());
-            cs.setInt(2, v.getCategoriaId());
-            cs.setInt(3, v.getMarcaId());
-            cs.setInt(4, v.getEstadoVehiculoId());
-            cs.setInt(5, v.getTipoTransmisionId());
-            cs.setInt(6, v.getTipoCombustibleId());
-            cs.setInt(7, v.getSucursalActualId());
-            cs.setString(8, v.getPlaca());
-            cs.setString(9, v.getModelo());
-            cs.setInt(10, v.getAnio());
-            cs.setInt(11, v.getNumPasajeros());
-            cs.setInt(12, v.getNumPuertas());
-            cs.setBoolean(13, v.isAireAcondicionado());
-            cs.setString(14, v.getModalidad());
-            cs.executeUpdate();
+        try (Connection cn = Conexion.getConexion()) {
+            cn.setAutoCommit(false);
+            try (CallableStatement cs = cn.prepareCall(sql)) {
+                cs.setInt(1, v.getVehiculoId());
+                cs.setInt(2, v.getCategoriaId());
+                cs.setInt(3, v.getMarcaId());
+                cs.setInt(4, v.getEstadoVehiculoId());
+                cs.setInt(5, v.getTipoTransmisionId());
+                cs.setInt(6, v.getTipoCombustibleId());
+                cs.setInt(7, v.getSucursalActualId());
+                cs.setString(8, v.getPlaca());
+                cs.setString(9, v.getModelo());
+                cs.setInt(10, v.getAnio());
+                cs.setInt(11, v.getNumPasajeros());
+                cs.setInt(12, v.getNumPuertas());
+                cs.setBoolean(13, v.isAireAcondicionado());
+                cs.setString(14, v.getModalidad());
+                cs.executeUpdate();
+
+                guardarModalidadEspecifica(cn, v);
+                cn.commit();
+            } catch (SQLException e) {
+                cn.rollback();
+                throw e;
+            } finally {
+                cn.setAutoCommit(true);
+            }
+        }
+    }
+
+    private void guardarModalidadEspecifica(Connection cn, Vehiculo v) throws SQLException {
+        try (CallableStatement csLimpiar = cn.prepareCall("{CALL sp_limpiar_modalidad_vehiculo(?, ?)}")) {
+            csLimpiar.setInt(1, v.getVehiculoId());
+            csLimpiar.setString(2, v.getModalidad());
+            csLimpiar.executeUpdate();
+        }
+
+        if (v instanceof VehiculoAlquiler) {
+            VehiculoAlquiler va = (VehiculoAlquiler) v;
+            try (CallableStatement csAlq = cn.prepareCall("{CALL sp_guardar_vehiculo_alquiler(?, ?, ?, ?)}")) {
+                csAlq.setInt(1, v.getVehiculoId());
+                if (va.getTarifaDiariaEspecifica() != null) {
+                    csAlq.setBigDecimal(2, va.getTarifaDiariaEspecifica());
+                } else {
+                    csAlq.setNull(2, java.sql.Types.DECIMAL);
+                }
+                csAlq.setInt(3, va.getKilometrajeActual());
+                csAlq.setBigDecimal(4, va.getDepositoGarantiaBase());
+                csAlq.executeUpdate();
+            }
+        } else if (v instanceof VehiculoVenta) {
+            VehiculoVenta vv = (VehiculoVenta) v;
+            try (CallableStatement csVen = cn.prepareCall("{CALL sp_guardar_vehiculo_venta(?, ?, ?, ?)}")) {
+                csVen.setInt(1, v.getVehiculoId());
+                csVen.setBigDecimal(2, vv.getPrecioVenta());
+                csVen.setString(3, vv.getCondicion());
+                csVen.setInt(4, vv.getMesesGarantia());
+                csVen.executeUpdate();
+            }
         }
     }
 
@@ -171,11 +228,43 @@ public class VehiculoDAOImpl implements VehiculoDAO {
 
     @Override
     public List<Sucursal> listarSucursales() throws SQLException {
-        return new SucursalDAOImpl().listar();
+        List<Sucursal> lista = new ArrayList<>();
+        try (Connection cn = Conexion.getConexion();
+                CallableStatement cs = cn.prepareCall("{CALL sp_listar_sucursales_combo()}");
+                ResultSet rs = cs.executeQuery()) {
+            while (rs.next()) {
+                Sucursal s = new Sucursal();
+                s.setSucursalId(rs.getInt("Sucursal_ID"));
+                s.setNombre(rs.getString("Nombre"));
+                lista.add(s);
+            }
+        }
+        return lista;
     }
 
     private Vehiculo mapear(ResultSet rs) throws SQLException {
-        Vehiculo v = new Vehiculo();
+        String modalidad = rs.getString("Modalidad");
+        Vehiculo v;
+
+        if ("Alquiler".equals(modalidad)) {
+            VehiculoAlquiler va = new VehiculoAlquiler();
+            va.setTarifaDiariaEspecifica(rs.getBigDecimal("Tarifa_Diaria_Especifica"));
+            int km = rs.getInt("Kilometraje_Actual");
+            if (!rs.wasNull()) va.setKilometrajeActual(km);
+            va.setDepositoGarantiaBase(rs.getBigDecimal("Deposito_Garantia_Base"));
+            v = va;
+        } else if ("Venta".equals(modalidad)) {
+            VehiculoVenta vv = new VehiculoVenta();
+            vv.setPrecioVenta(rs.getBigDecimal("Precio_Venta"));
+            vv.setCondicion(rs.getString("Condicion"));
+            int garantia = rs.getInt("Meses_Garantia");
+            if (!rs.wasNull()) vv.setMesesGarantia(garantia);
+            v = vv;
+        } else {
+            v = new Vehiculo();
+        }
+
+        // Campos comunes de la clase padre Vehiculo
         v.setVehiculoId(rs.getInt("Vehiculo_ID"));
         v.setCategoriaId(rs.getInt("Categoria_ID"));
         v.setMarcaId(rs.getInt("Marca_ID"));
@@ -189,7 +278,8 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         v.setNumPasajeros(rs.getInt("Num_Pasajeros"));
         v.setNumPuertas(rs.getInt("Num_Puertas"));
         v.setAireAcondicionado(rs.getBoolean("Aire_Acondicionado"));
-        v.setModalidad(rs.getString("Modalidad"));
+        v.setModalidad(modalidad);
+
         return v;
     }
 }
