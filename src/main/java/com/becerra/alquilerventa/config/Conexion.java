@@ -15,7 +15,7 @@ public class Conexion {
         try (InputStream in = Conexion.class.getClassLoader()
                 .getResourceAsStream("db.properties")){
             if (in == null) {
-                throw new RuntimeException("No se encontró ddb.properties");
+                throw new RuntimeException("No se encontró db.properties");
             }
             Properties props = new Properties();
             props.load(in);
@@ -23,7 +23,7 @@ public class Conexion {
             user = props.getProperty("db.user");
             password = props.getProperty("db.password");
 
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName(props.getProperty("db.driver"));
         } catch (Exception e) {
             throw new RuntimeException("Error al inicializar la conexión: " + e.getMessage(), e);
         }
