@@ -1,6 +1,11 @@
 package com.becerra.alquilerventa.modelo;
 
 public class Persona {
+    public static final String NINGUNO = "NINGUNO";
+    public static final String CLIENTE_NATURAL = "CLIENTE_NATURAL";
+    public static final String CLIENTE_JURIDICO = "CLIENTE_JURIDICO";
+    public static final String TRABAJADOR = "TRABAJADOR";
+
     private int personaId;
     private int tipoDocumentoId;
     private String numeroDocumento;
@@ -10,6 +15,8 @@ public class Persona {
     private String estadoUsuario;
     private String passwordHash;
     private String nombreTipoDocumento;
+    private String tipoRegistro;
+    private String nombreCompleto;
 
     public Persona() {}
 
@@ -23,6 +30,8 @@ public class Persona {
         this.estadoUsuario = estadoUsuario;
         this.passwordHash = passwordHash;
     }
+
+    public String getCodigoTipo() { return NINGUNO; }
 
     public int getPersonaId() { return personaId; }
     public void setPersonaId(int personaId) { this.personaId = personaId; }
@@ -42,4 +51,8 @@ public class Persona {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getNombreTipoDocumento() { return nombreTipoDocumento; }
     public void setNombreTipoDocumento(String nombreTipoDocumento) { this.nombreTipoDocumento = nombreTipoDocumento; }
+    public String getTipoRegistro() { return tipoRegistro; }
+    public void setTipoRegistro(String tipoRegistro) { this.tipoRegistro = tipoRegistro; }
+    public String getNombreCompleto() { return nombreCompleto; }
+    public void setNombreCompleto(String nombreCompleto) { this.nombreCompleto = nombreCompleto; }
 }
