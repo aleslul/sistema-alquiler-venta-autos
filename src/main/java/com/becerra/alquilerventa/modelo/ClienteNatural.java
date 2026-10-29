@@ -9,7 +9,10 @@ public class ClienteNatural extends Cliente {
     private String licenciaConducir;
     private LocalDate fechaVencimientoLicencia;
 
-    public ClienteNatural() {}
+    public ClienteNatural() { setTipoCliente("Natural"); }
+
+    @Override
+    public String getCodigoTipo() { return CLIENTE_NATURAL; }
 
     public String getNombres() { return nombres; }
     public void setNombres(String nombres) { this.nombres = nombres; }

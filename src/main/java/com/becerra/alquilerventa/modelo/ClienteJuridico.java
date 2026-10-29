@@ -5,7 +5,10 @@ public class ClienteJuridico extends Cliente {
     private String representanteLegal;
     private String giroNegocio;
 
-    public ClienteJuridico() {}
+    public ClienteJuridico() { setTipoCliente("Juridico"); }
+
+    @Override
+    public String getCodigoTipo() { return CLIENTE_JURIDICO; }
 
     public String getRazonSocial() { return razonSocial; }
     public void setRazonSocial(String razonSocial) { this.razonSocial = razonSocial; }
