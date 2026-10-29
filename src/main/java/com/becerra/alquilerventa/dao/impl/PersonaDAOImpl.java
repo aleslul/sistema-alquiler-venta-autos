@@ -29,10 +29,21 @@ public class PersonaDAOImpl implements PersonaDAO {
                 CallableStatement cs = cn.prepareCall("{CALL sp_listar_personas()}");
                 ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                Persona p = new Persona();
+                String tipoReg = rs.getString("Tipo_Registro");
+                Persona p = switch (tipoReg != null ? tipoReg : "") {
+                    case "Trabajador" -> {
+                        Trabajador t = new Trabajador();
+                        t.setCodigoEmpleado(rs.getString("Codigo_Empleado"));
+                        yield t;
+                    }
+                    case "Cliente Natural" -> new ClienteNatural();
+                    case "Cliente Jurídico" -> new ClienteJuridico();
+                    default -> new Persona();
+                };
+
                 llenarBase(rs, p);
                 p.setNombreTipoDocumento(rs.getString("Nombre_Tipo_Documento"));
-                p.setTipoRegistro(rs.getString("Tipo_Registro"));
+                p.setTipoRegistro(tipoReg);
                 p.setNombreCompleto(rs.getString("Nombre_Completo"));
                 lista.add(p);
             }

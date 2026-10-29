@@ -139,6 +139,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Tipo</th>
+                    <th>Cód. Empleado</th>
                     <th>Nombre / Razón social</th>
                     <th>Tipo Doc.</th>
                     <th>N° Documento</th>
@@ -153,6 +154,14 @@
                     <tr>
                         <td>${p.personaId}</td>
                         <td><c:out value="${p.tipoRegistro}" /></td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${p.codigoTipo == 'TRABAJADOR'}">
+                                    <strong><c:out value="${p.codigoEmpleado}" /></strong>
+                                </c:when>
+                                <c:otherwise>-</c:otherwise>
+                            </c:choose>
+                        </td>
                         <td><c:out value="${p.nombreCompleto}" /></td>
                         <td><c:out value="${p.nombreTipoDocumento}" /></td>
                         <td><c:out value="${p.numeroDocumento}" /></td>
@@ -172,7 +181,7 @@
                     </tr>
                 </c:forEach>
                 <c:if test="${empty personas and empty error}">
-                    <tr><td colspan="9" class="vacio">No hay personas registradas.</td></tr>
+                    <tr><td colspan="10" class="vacio">No hay personas registradas.</td></tr>
                 </c:if>
             </tbody>
         </table>

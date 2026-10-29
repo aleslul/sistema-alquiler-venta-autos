@@ -192,17 +192,16 @@
             </div>
         </div>
 
-        <!-- ===== Tipo de registro ===== -->
-        <div class="campo">
-            <label for="tipoRegistro">¿Qué es esta persona?</label>
-            <select id="tipoRegistro" name="tipoRegistro">
-                <option value="NINGUNO" ${tipoRegistro == 'NINGUNO' ? 'selected' : ''}>Solo persona (sin rol)</option>
-                <option value="CLIENTE_NATURAL" ${tipoRegistro == 'CLIENTE_NATURAL' ? 'selected' : ''}>Cliente natural</option>
-                <option value="CLIENTE_JURIDICO" ${tipoRegistro == 'CLIENTE_JURIDICO' ? 'selected' : ''}>Cliente jurídico</option>
-                <option value="TRABAJADOR" ${tipoRegistro == 'TRABAJADOR' ? 'selected' : ''}>Trabajador</option>
-            </select>
-        </div>
-
+                    <!-- ===== Tipo de registro ===== -->
+            <div class="campo">
+                <label for="tipoRegistro">¿Qué es esta persona?</label>
+                <select id="tipoRegistro" name="tipoRegistro" required>
+                    <option value="">-- Seleccione un rol --</option>
+                    <option value="CLIENTE_NATURAL" ${tipoRegistro == 'CLIENTE_NATURAL' ? 'selected' : ''}>Cliente natural</option>
+                    <option value="CLIENTE_JURIDICO" ${tipoRegistro == 'CLIENTE_JURIDICO' ? 'selected' : ''}>Cliente jurídico</option>
+                    <option value="TRABAJADOR" ${tipoRegistro == 'TRABAJADOR' ? 'selected' : ''}>Trabajador</option>
+                </select>
+            </div>
         <!-- ===== Cliente natural ===== -->
         <div class="seccion-tipo" data-tipo="CLIENTE_NATURAL" style="display:none;">
             <h3>Datos del cliente natural</h3>
@@ -265,22 +264,25 @@
                 </div>
             </div>
             <div class="grid-2">
-                <div class="campo">
-                    <label for="tr_codigo">Código de empleado</label>
-                    <input type="text" id="tr_codigo" name="tr_codigo" maxlength="50" value="${fn:escapeXml(trabajador.codigoEmpleado)}">
-                </div>
-                <div class="campo">
-                    <label for="tr_rolId">Rol</label>
-                    <select id="tr_rolId" name="tr_rolId">
-                        <option value="">-- Seleccione --</option>
-                        <c:forEach var="r" items="${rolesTrabajador}">
-                            <option value="${r.rolTrabajadorId}" ${r.rolTrabajadorId == trabajador.rolTrabajadorId ? 'selected' : ''}>
-                                <c:out value="${r.nombre}" />
-                            </option>
-                        </c:forEach>
-                    </select>
-                </div>
+            <div class="campo">
+                <label for="tr_codigo">Código de empleado</label>
+                <input type="text" id="tr_codigo" name="tr_codigo" readonly
+                    placeholder="Autogenerado al registrar"
+                    value="${fn:escapeXml(trabajador.codigoEmpleado)}"
+                    style="background-color: #e9ecef; cursor: not-allowed;">
             </div>
+            <div class="campo">
+                <label for="tr_rolId">Rol</label>
+                <select id="tr_rolId" name="tr_rolId">
+                    <option value="">-- Seleccione --</option>
+                    <c:forEach var="r" items="${rolesTrabajador}">
+                        <option value="${r.rolTrabajadorId}" ${r.rolTrabajadorId == trabajador.rolTrabajadorId ? 'selected' : ''}>
+                            <c:out value="${r.nombre}" />
+                        </option>
+                    </c:forEach>
+                </select>
+            </div>
+        </div>
             <div class="campo">
                 <label for="tr_sucursalId">Sucursal</label>
                 <select id="tr_sucursalId" name="tr_sucursalId">

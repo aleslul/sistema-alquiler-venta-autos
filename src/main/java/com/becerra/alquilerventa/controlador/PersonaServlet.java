@@ -148,13 +148,17 @@ public class PersonaServlet extends HttpServlet {
     }
 
 
-    private Persona leerFormulario(HttpServletRequest request, List<String> errores) {
-        Persona p = switch (texto(request, "tipoRegistro")) {
-            case Persona.CLIENTE_NATURAL -> leerClienteNatural(request, errores);
-            case Persona.CLIENTE_JURIDICO -> leerClienteJuridico(request, errores);
-            case Persona.TRABAJADOR -> leerTrabajador(request, errores);
-            default -> new Persona();
-        };
+            private Persona leerFormulario(HttpServletRequest request, List<String> errores) {
+            String tipoReg = texto(request, "tipoRegistro");
+            Persona p = switch (tipoReg) {
+                case Persona.CLIENTE_NATURAL -> leerClienteNatural(request, errores);
+                case Persona.CLIENTE_JURIDICO -> leerClienteJuridico(request, errores);
+                case Persona.TRABAJADOR -> leerTrabajador(request, errores);
+                default -> {
+                    errores.add("Debe seleccionar un rol para la persona.");
+                    yield new Persona();
+                }
+            };
 
         String id = request.getParameter("personaId");
         if (id != null && !id.isBlank()) {
@@ -209,30 +213,29 @@ public class PersonaServlet extends HttpServlet {
         return c;
     }
 
-    private Trabajador leerTrabajador(HttpServletRequest request, List<String> errores) {
-        Trabajador t = new Trabajador();
-        t.setNombres(texto(request, "tr_nombres"));
-        t.setApellidos(texto(request, "tr_apellidos"));
-        t.setCodigoEmpleado(texto(request, "tr_codigo"));
+        private Trabajador leerTrabajador(HttpServletRequest request, List<String> errores) {
+            Trabajador t = new Trabajador();
+            t.setNombres(texto(request, "tr_nombres"));
+            t.setApellidos(texto(request, "tr_apellidos"));
+            t.setCodigoEmpleado(texto(request, "tr_codigo"));
 
-        try {
-            t.setSucursalId(Integer.parseInt(texto(request, "tr_sucursalId")));
-            if (t.getSucursalId() <= 0) errores.add("Seleccione una sucursal.");
-        } catch (NumberFormatException e) {
-            errores.add("Seleccione una sucursal.");
-        }
-        try {
-            t.setRolTrabajadorId(Integer.parseInt(texto(request, "tr_rolId")));
-            if (t.getRolTrabajadorId() <= 0) errores.add("Seleccione un rol de trabajador.");
-        } catch (NumberFormatException e) {
-            errores.add("Seleccione un rol de trabajador.");
-        }
+            try {
+                t.setSucursalId(Integer.parseInt(texto(request, "tr_sucursalId")));
+                if (t.getSucursalId() <= 0) errores.add("Seleccione una sucursal.");
+            } catch (NumberFormatException e) {
+                errores.add("Seleccione una sucursal.");
+            }
+            try {
+                t.setRolTrabajadorId(Integer.parseInt(texto(request, "tr_rolId")));
+                if (t.getRolTrabajadorId() <= 0) errores.add("Seleccione un rol de trabajador.");
+            } catch (NumberFormatException e) {
+                errores.add("Seleccione un rol de trabajador.");
+            }
 
-        if (t.getNombres().isEmpty()) errores.add("Los nombres del trabajador son obligatorios.");
-        if (t.getApellidos().isEmpty()) errores.add("Los apellidos del trabajador son obligatorios.");
-        if (t.getCodigoEmpleado().isEmpty()) errores.add("El código de empleado es obligatorio.");
-        return t;
-    }
+            if (t.getNombres().isEmpty()) errores.add("Los nombres del trabajador son obligatorios.");
+            if (t.getApellidos().isEmpty()) errores.add("Los apellidos del trabajador son obligatorios.");
+            return t;
+        }
 
     private LocalDate fecha(HttpServletRequest request, String nombre, String mensajeError, List<String> errores) {
         String valor = texto(request, nombre);
