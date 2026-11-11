@@ -2,6 +2,7 @@ package com.becerra.alquilerventa.controlador;
 
 import com.becerra.alquilerventa.dao.SucursalDAO;
 import com.becerra.alquilerventa.dao.impl.SucursalDAOImpl;
+import com.becerra.alquilerventa.modelo.Empresa;
 import com.becerra.alquilerventa.modelo.Sucursal;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -122,12 +123,16 @@ public class SucursalServlet extends HttpServlet {
     }
 
     private void mostrarFormulario(HttpServletRequest request, HttpServletResponse response,
-                                   Sucursal sucursal, List<String> errores)
+                                Sucursal sucursal, List<String> errores)
             throws ServletException, IOException {
         request.setAttribute("sucursal", sucursal);
         request.setAttribute("errores", errores);
         try {
-            request.setAttribute("empresas", sucursalDAO.listarEmpresas());
+            List<Empresa> empresas = sucursalDAO.listarEmpresas();
+            if (empresas == null || empresas.isEmpty()) {
+                request.setAttribute("error", "Advertencia: No hay empresas registradas. Debe registrar al menos una Empresa en la base de datos antes de crear sucursales.");
+            }
+            request.setAttribute("empresas", empresas);
         } catch (SQLException e) {
             request.setAttribute("error", "No se pudo cargar las empresas: " + e.getMessage());
         }

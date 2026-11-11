@@ -225,11 +225,85 @@
                 <label for="direccion">Dirección Oficial</label>
                 <input type="text" id="direccion" name="direccion" maxlength="200" placeholder="Ingresa la ubicación física exacta" required value="${fn:escapeXml(sucursal.direccion)}">
             </div>
+            
+            <div class="campo campo-full">
+                <label>Horario de Atención</label>
+                
+                <!-- Contenedor visual moderno para armar el horario -->
+                <div style="background: #f8f9fa; border: 2px solid #ebedef; border-radius: 12px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
+                    
+                    <!-- Selección de Días -->
+                    <div>
+                        <label for="selectDias" style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px;">Días Operativos:</label>
+                        <select id="selectDias" class="input-horario" onchange="actualizarHorarioFinal()">
+                            <option value="L-V">Lunes a Viernes</option>
+                            <option value="L-S">Lunes a Sábado</option>
+                            <option value="L-D">Lunes a Domingo (24h)</option>
+                            <option value="Fines de semana">Fines de Semana</option>
+                        </select>
+                    </div>
 
-            <div class="campo">
-                <label for="horarioAtencion">Rango de Atención</label>
-                <input type="text" id="horarioAtencion" name="horarioAtencion" maxlength="100" placeholder="Ej. L-V: 08:00 a 18:00" value="${fn:escapeXml(sucursal.horarioAtencion)}">
+                    <!-- Hora de Apertura -->
+                    <div>
+                        <label for="horaApertura" style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px;">Apertura:</label>
+                        <input type="time" id="horaApertura" class="input-horario" value="08:00" onchange="actualizarHorarioFinal()">
+                    </div>
+
+                    <!-- Hora de Cierre -->
+                    <div>
+                        <label for="horaCierre" style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px;">Cierre:</label>
+                        <input type="time" id="horaCierre" class="input-horario" value="18:00" onchange="actualizarHorarioFinal()">
+                    </div>
+                </div>
+
+                <!-- Input final que va a la base de datos -->
+                <input type="text" id="horarioAtencion" name="horarioAtencion" required 
+                       value="${fn:escapeXml(sucursal.horarioAtencion)}" 
+                       placeholder="Ej. L-V: 08:00 a 18:00" 
+                       style="margin-top: 10px; font-weight: 600; color: #d35400;">
             </div>
+
+            <!-- Script inteligente de sincronización -->
+            <script>
+            function actualizarHorarioFinal() {
+                const dias = document.getElementById('selectDias').value;
+                const apertura = document.getElementById('horaApertura').value;
+                const cierre = document.getElementById('horaCierre').value;
+                
+                if (apertura && cierre) {
+                    const resultado = dias + ": " + apertura + " a " + cierre;
+                    document.getElementById('horarioAtencion').value = resultado;
+                }
+            }
+
+            window.addEventListener('DOMContentLoaded', () => {
+                const inputHorario = document.getElementById('horarioAtencion');
+                const val = inputHorario.value ? inputHorario.value.trim() : "";
+                
+                // Si está vacío o tiene datos corruptos previos (" a "), inicializamos por defecto
+                if(!val || val === "a" || val === "a " || val === " a" || !val.includes(" a ")) {
+                    actualizarHorarioFinal();
+                } else {
+                    // Si ya tiene un formato válido, intentamos desglosarlo para mover los selectores acorde
+                    try {
+                        const partes = val.split(" a ");
+                        const cierre = partes[1].trim();
+                        const subPartes = partes[0].split(":");
+                        if (subPartes.length >= 2) {
+                            const dias = subPartes[0].trim();
+                            const apertura = subPartes[1].trim();
+                            
+                            document.getElementById('selectDias').value = dias;
+                            document.getElementById('horaApertura').value = apertura;
+                            document.getElementById('horaCierre').value = cierre;
+                        }
+                    } catch(e) {
+                        console.log("No se pudo parsear el horario anterior, usando valores por defecto.");
+                        actualizarHorarioFinal();
+                    }
+                }
+            });
+            </script>
             
             <div class="campo">
                 <label for="estadoSucursal">Estatus Operativo</label>
@@ -242,6 +316,21 @@
             <div class="footer-form">
                 <button type="submit" class="btn-submit">${esEdicion ? 'Guardar Cambios' : 'Procesar Alta de Sucursal'}</button>
             </div>
+
+            <c:if test="${not empty error}">
+                <div class="alerta alerta-error"><c:out value="${error}" /></div>
+            </c:if>
+
+            <c:if test="${not empty errores}">
+                <div class="alerta alerta-error">
+                    <strong>Revise los siguientes datos:</strong>
+                    <ul class="lista-errores">
+                        <c:forEach var="e" items="${errores}">
+                            <li><c:out value="${e}" /></li>
+                        </c:forEach>
+                    </ul>
+                </div>
+            </c:if>
         </form>
     </div>
 </div>
