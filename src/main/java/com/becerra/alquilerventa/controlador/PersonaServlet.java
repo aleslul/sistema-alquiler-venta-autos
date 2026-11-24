@@ -21,8 +21,8 @@ import java.util.List;
 @WebServlet("/personas")
 public class PersonaServlet extends HttpServlet {
 
-    private static final String VISTA_LISTAR = "/WEB-INF/views/vistas/persona/listar.jsp";
-    private static final String VISTA_FORMULARIO = "/WEB-INF/views/vistas/persona/formulario.jsp";
+    private static final String VISTA_LISTAR = "/WEB-INF/views/persona/listar.jsp";
+    private static final String VISTA_FORMULARIO = "/WEB-INF/views/persona/formulario.jsp";
 
     private final PersonaDAO personaDAO = new PersonaDAOImpl();
 
@@ -153,7 +153,10 @@ public class PersonaServlet extends HttpServlet {
             case Persona.CLIENTE_NATURAL -> leerClienteNatural(request, errores);
             case Persona.CLIENTE_JURIDICO -> leerClienteJuridico(request, errores);
             case Persona.TRABAJADOR -> leerTrabajador(request, errores);
-            default -> new Persona();
+            default -> {
+            errores.add("Debe seleccionar un rol para la persona.");
+            yield new Persona();
+            }
         };
 
         String id = request.getParameter("personaId");
@@ -230,7 +233,6 @@ public class PersonaServlet extends HttpServlet {
 
         if (t.getNombres().isEmpty()) errores.add("Los nombres del trabajador son obligatorios.");
         if (t.getApellidos().isEmpty()) errores.add("Los apellidos del trabajador son obligatorios.");
-        if (t.getCodigoEmpleado().isEmpty()) errores.add("El código de empleado es obligatorio.");
         return t;
     }
 
