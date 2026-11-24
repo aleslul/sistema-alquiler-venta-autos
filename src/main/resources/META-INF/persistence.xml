@@ -11,6 +11,13 @@
         <!-- Entidades administradas por JPA -->
         <class>com.becerra.alquilerventa.modelo.Empresa</class>
         <class>com.becerra.alquilerventa.modelo.Sucursal</class>
+        <class>com.becerra.alquilerventa.modelo.Persona</class>
+        <class>com.becerra.alquilerventa.modelo.Cliente</class>
+        <class>com.becerra.alquilerventa.modelo.ClienteNatural</class>
+        <class>com.becerra.alquilerventa.modelo.ClienteJuridico</class>
+        <class>com.becerra.alquilerventa.modelo.Trabajador</class>
+        <class>com.becerra.alquilerventa.modelo.TipoDocumento</class>
+        <class>com.becerra.alquilerventa.modelo.RolTrabajador</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>

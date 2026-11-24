@@ -1,9 +1,16 @@
 package com.becerra.alquilerventa.modelo;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "Cliente")
+@PrimaryKeyJoinColumn(name = "Cliente_ID")
 public class Cliente extends Persona {
-    private String tipoCliente; // 'Natural' o 'Juridico'
+    @Column(name = "Tipo_Cliente", length = 20, nullable = false)
+    private String tipoCliente;
+
+    @Column(name = "Fecha_Registro", nullable = false)
     private LocalDateTime fechaRegistro;
 
     public Cliente() {}

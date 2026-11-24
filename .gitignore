@@ -5,3 +5,4 @@ target/
 .project
 repomix-output.xml
 v1.xml
+repo-*.xml

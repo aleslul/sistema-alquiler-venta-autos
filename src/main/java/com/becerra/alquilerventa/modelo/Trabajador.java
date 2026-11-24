@@ -1,10 +1,24 @@
 package com.becerra.alquilerventa.modelo;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "Trabajador")
+@PrimaryKeyJoinColumn(name = "Trabajador_ID")
 public class Trabajador extends Persona {
+    @Column(name = "Sucursal_ID", nullable = false)
     private int sucursalId;
+
+    @Column(name = "Rol_Trabajador_ID", nullable = false)
     private int rolTrabajadorId;
+
+    @Column(name = "Nombres", length = 100, nullable = false)
     private String nombres;
+
+    @Column(name = "Apellidos", length = 100, nullable = false)
     private String apellidos;
+
+    @Column(name = "Codigo_Empleado", length = 50, nullable = false, unique = true)
     private String codigoEmpleado;
 
     public Trabajador() {}

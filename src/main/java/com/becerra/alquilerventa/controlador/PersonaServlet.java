@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.sql.SQLException;
+import jakarta.persistence.PersistenceException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class PersonaServlet extends HttpServlet {
         moverMensajeFlash(request);
         try {
             request.setAttribute("personas", personaDAO.listar());
-        } catch (SQLException e) {
+        } catch (PersistenceException e) {
             request.setAttribute("error", "No se pudo cargar las personas: " + e.getMessage());
         }
         request.getRequestDispatcher(VISTA_LISTAR).forward(request, response);
@@ -79,7 +79,7 @@ public class PersonaServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             guardarMensajeFlash(request, "error", "ID de persona no válido.");
             redirigirAlListado(request, response);
-        } catch (SQLException e) {
+        } catch (PersistenceException e) {
             guardarMensajeFlash(request, "error", "Error al obtener la persona: " + e.getMessage());
             redirigirAlListado(request, response);
         }
@@ -104,7 +104,7 @@ public class PersonaServlet extends HttpServlet {
                 guardarMensajeFlash(request, "mensaje", "Persona registrada correctamente.");
             }
             redirigirAlListado(request, response);
-        } catch (SQLException e) {
+        } catch (PersistenceException e) {
             errores.add("Error al guardar (verifique que el Documento, el Correo o el Código de empleado no estén duplicados): " + e.getMessage());
             mostrarFormulario(request, response, p, errores);
         }
@@ -118,7 +118,7 @@ public class PersonaServlet extends HttpServlet {
             guardarMensajeFlash(request, "mensaje", "Persona eliminada correctamente.");
         } catch (NumberFormatException e) {
             guardarMensajeFlash(request, "error", "ID no válido.");
-        } catch (SQLException e) {
+        } catch (PersistenceException e) {
             guardarMensajeFlash(request, "error", "No se puede eliminar porque tiene registros asociados: " + e.getMessage());
         }
         redirigirAlListado(request, response);
@@ -141,7 +141,7 @@ public class PersonaServlet extends HttpServlet {
             request.setAttribute("tiposDocumento", personaDAO.listarTiposDocumento());
             request.setAttribute("rolesTrabajador", personaDAO.listarRolesTrabajador());
             request.setAttribute("sucursales", personaDAO.listarSucursales());
-        } catch (SQLException e) {
+        } catch (PersistenceException e) {
             request.setAttribute("error", "No se pudieron cargar las listas desplegables: " + e.getMessage());
         }
         request.getRequestDispatcher(VISTA_FORMULARIO).forward(request, response);
@@ -153,7 +153,10 @@ public class PersonaServlet extends HttpServlet {
             case Persona.CLIENTE_NATURAL -> leerClienteNatural(request, errores);
             case Persona.CLIENTE_JURIDICO -> leerClienteJuridico(request, errores);
             case Persona.TRABAJADOR -> leerTrabajador(request, errores);
-            default -> new Persona();
+            default -> {
+            errores.add("Debe seleccionar un rol para la persona.");
+            yield new Persona();
+            }
         };
 
         String id = request.getParameter("personaId");
@@ -230,7 +233,6 @@ public class PersonaServlet extends HttpServlet {
 
         if (t.getNombres().isEmpty()) errores.add("Los nombres del trabajador son obligatorios.");
         if (t.getApellidos().isEmpty()) errores.add("Los apellidos del trabajador son obligatorios.");
-        if (t.getCodigoEmpleado().isEmpty()) errores.add("El código de empleado es obligatorio.");
         return t;
     }
 

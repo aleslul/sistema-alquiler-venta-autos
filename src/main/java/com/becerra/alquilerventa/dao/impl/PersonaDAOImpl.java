@@ -1,256 +1,275 @@
 package com.becerra.alquilerventa.dao.impl;
 
-import com.becerra.alquilerventa.config.Conexion;
+import com.becerra.alquilerventa.config.JPAUtil;
 import com.becerra.alquilerventa.dao.PersonaDAO;
-import com.becerra.alquilerventa.modelo.ClienteJuridico;
-import com.becerra.alquilerventa.modelo.ClienteNatural;
-import com.becerra.alquilerventa.modelo.Persona;
-import com.becerra.alquilerventa.modelo.RolTrabajador;
-import com.becerra.alquilerventa.modelo.Sucursal;
-import com.becerra.alquilerventa.modelo.TipoDocumento;
-import com.becerra.alquilerventa.modelo.Trabajador;
+import com.becerra.alquilerventa.modelo.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureQuery;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class PersonaDAOImpl implements PersonaDAO {
 
     @Override
-    public List<Persona> listar() throws SQLException {
+    @SuppressWarnings("unchecked")
+    public List<Persona> listar() {
+        EntityManager em = JPAUtil.getEntityManager();
         List<Persona> lista = new ArrayList<>();
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall("{CALL sp_listar_personas()}");
-                ResultSet rs = cs.executeQuery()) {
-            while (rs.next()) {
-                Persona p = new Persona();
-                llenarBase(rs, p);
-                p.setNombreTipoDocumento(rs.getString("Nombre_Tipo_Documento"));
-                p.setTipoRegistro(rs.getString("Tipo_Registro"));
-                p.setNombreCompleto(rs.getString("Nombre_Completo"));
-                lista.add(p);
-            }
-        }
-        return lista;
-    }
-
-    @Override
-    public Persona obtenerPorId(int id) throws SQLException {
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall("{CALL sp_obtener_persona(?)}")) {
-            cs.setInt(1, id);
-            try (ResultSet rs = cs.executeQuery()) {
-                if (!rs.next()) return null;
-
-                String codigo = rs.getString("Codigo_Tipo");
-                Persona p = switch (codigo) {
-                    case Persona.CLIENTE_NATURAL -> {
-                        ClienteNatural c = new ClienteNatural();
-                        c.setNombres(rs.getString("CN_Nombres"));
-                        c.setApellidos(rs.getString("CN_Apellidos"));
-                        c.setFechaNacimiento(fecha(rs, "CN_Fecha_Nacimiento"));
-                        c.setLicenciaConducir(rs.getString("CN_Licencia_Conducir"));
-                        c.setFechaVencimientoLicencia(fecha(rs, "CN_Fecha_Vencimiento_Licencia"));
-                        yield c;
-                    }
-                    case Persona.CLIENTE_JURIDICO -> {
-                        ClienteJuridico c = new ClienteJuridico();
-                        c.setRazonSocial(rs.getString("CJ_Razon_Social"));
-                        c.setRepresentanteLegal(rs.getString("CJ_Representante_Legal"));
-                        c.setGiroNegocio(rs.getString("CJ_Giro_Negocio"));
-                        yield c;
-                    }
-                    case Persona.TRABAJADOR -> {
+        try {
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_listar_personas");
+            List<Object[]> filas = sp.getResultList();
+            for (Object[] r : filas) {
+                String tipoReg = str(r[10]);
+                Persona p = switch (tipoReg != null ? tipoReg : "") {
+                    case "Trabajador" -> {
                         Trabajador t = new Trabajador();
-                        t.setSucursalId(rs.getInt("T_Sucursal_ID"));
-                        t.setRolTrabajadorId(rs.getInt("T_Rol_Trabajador_ID"));
-                        t.setNombres(rs.getString("T_Nombres"));
-                        t.setApellidos(rs.getString("T_Apellidos"));
-                        t.setCodigoEmpleado(rs.getString("T_Codigo_Empleado"));
+                        t.setCodigoEmpleado(str(r[9]));
                         yield t;
                     }
+                    case "Cliente Natural" -> new ClienteNatural();
+                    case "Cliente Jurídico" -> new ClienteJuridico();
                     default -> new Persona();
                 };
-                llenarBase(rs, p);
-                return p;
+
+                p.setPersonaId(entero(r[0]));
+                p.setTipoDocumentoId(entero(r[1]));
+                p.setNombreTipoDocumento(str(r[2]));
+                p.setNumeroDocumento(str(r[3]));
+                p.setCorreo(str(r[4]));
+                p.setTelefono(str(r[5]));
+                p.setDireccion(str(r[6]));
+                p.setEstadoUsuario(str(r[7]));
+                p.setPasswordHash(str(r[8]));
+                p.setTipoRegistro(tipoReg);
+                p.setNombreCompleto(str(r[11]));
+                lista.add(p);
             }
+            return lista;
+        } finally {
+            em.close();
         }
     }
 
     @Override
-    public void insertar(Persona p) throws SQLException {
-        try (Connection cn = Conexion.getConexion()) {
-            cn.setAutoCommit(false);
-            try {
-                try (CallableStatement cs = cn.prepareCall("{CALL sp_insertar_persona(?, ?, ?, ?, ?, ?, ?, ?)}")) {
-                    cs.setInt(1, p.getTipoDocumentoId());
-                    cs.setString(2, p.getNumeroDocumento());
-                    cs.setString(3, p.getCorreo());
-                    cs.setString(4, p.getTelefono());
-                    cs.setString(5, p.getDireccion());
-                    cs.setString(6, p.getEstadoUsuario());
-                    cs.setString(7, p.getPasswordHash());
-                    cs.registerOutParameter(8, Types.INTEGER);
-                    cs.executeUpdate();
-                    p.setPersonaId(cs.getInt(8));
+    @SuppressWarnings("unchecked")
+    public Persona obtenerPorId(int id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_obtener_persona");
+            entrada(sp, 1, Integer.class, id);
+            List<Object[]> filas = sp.getResultList();
+            if (filas.isEmpty()) return null;
+
+            Object[] r = filas.get(0);
+            
+            String codigo = str(r[8]);
+            Persona p = switch (codigo != null ? codigo : "") {
+                case Persona.CLIENTE_NATURAL -> {
+                    ClienteNatural c = new ClienteNatural();
+                    c.setNombres(str(r[9]));
+                    c.setApellidos(str(r[10]));
+                    c.setFechaNacimiento(fecha(r[11]));
+                    c.setLicenciaConducir(str(r[12]));
+                    c.setFechaVencimientoLicencia(fecha(r[13]));
+                    yield c;
                 }
-                guardarRol(cn, p);
-                cn.commit();
-            } catch (SQLException | RuntimeException e) {
-                cn.rollback();
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public void actualizar(Persona p) throws SQLException {
-        try (Connection cn = Conexion.getConexion()) {
-            cn.setAutoCommit(false);
-            try {
-                try (CallableStatement cs = cn.prepareCall("{CALL sp_actualizar_persona(?, ?, ?, ?, ?, ?, ?, ?)}")) {
-                    cs.setInt(1, p.getPersonaId());
-                    cs.setInt(2, p.getTipoDocumentoId());
-                    cs.setString(3, p.getNumeroDocumento());
-                    cs.setString(4, p.getCorreo());
-                    cs.setString(5, p.getTelefono());
-                    cs.setString(6, p.getDireccion());
-                    cs.setString(7, p.getEstadoUsuario());
-                    cs.setString(8, p.getPasswordHash());
-                    cs.executeUpdate();
+                case Persona.CLIENTE_JURIDICO -> {
+                    ClienteJuridico c = new ClienteJuridico();
+                    c.setRazonSocial(str(r[14]));
+                    c.setRepresentanteLegal(str(r[15]));
+                    c.setGiroNegocio(str(r[16]));
+                    yield c;
                 }
-                // Quita los roles que ya no corresponden (por si cambió de tipo)
-                try (CallableStatement cs = cn.prepareCall("{CALL sp_limpiar_roles_persona(?, ?)}")) {
-                    cs.setInt(1, p.getPersonaId());
-                    cs.setString(2, p.getCodigoTipo());
-                    cs.executeUpdate();
+                case Persona.TRABAJADOR -> {
+                    Trabajador t = new Trabajador();
+                    t.setSucursalId(entero(r[17]));
+                    t.setRolTrabajadorId(entero(r[18]));
+                    t.setNombres(str(r[19]));
+                    t.setApellidos(str(r[20]));
+                    t.setCodigoEmpleado(str(r[21]));
+                    yield t;
                 }
-                guardarRol(cn, p);
-                cn.commit();
-            } catch (SQLException | RuntimeException e) {
-                cn.rollback();
-                throw e;
-            }
+                default -> new Persona();
+            };
+
+            p.setPersonaId(entero(r[0]));
+            p.setTipoDocumentoId(entero(r[1]));
+            p.setNumeroDocumento(str(r[2]));
+            p.setCorreo(str(r[3]));
+            p.setTelefono(str(r[4]));
+            p.setDireccion(str(r[5]));
+            p.setEstadoUsuario(str(r[6]));
+            p.setPasswordHash(str(r[7]));
+            return p;
+        } finally {
+            em.close();
         }
     }
 
     @Override
-    public void eliminar(int id) throws SQLException {
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall("{CALL sp_eliminar_persona(?)}")) {
-            cs.setInt(1, id);
-            cs.executeUpdate();
+    public void insertar(Persona p) {
+        enTransaccion(em -> {
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_insertar_persona");
+            entrada(sp, 1, Integer.class, p.getTipoDocumentoId());
+            entrada(sp, 2, String.class, p.getNumeroDocumento());
+            entrada(sp, 3, String.class, p.getCorreo());
+            entrada(sp, 4, String.class, p.getTelefono());
+            entrada(sp, 5, String.class, p.getDireccion());
+            entrada(sp, 6, String.class, p.getEstadoUsuario());
+            entrada(sp, 7, String.class, p.getPasswordHash());
+            sp.registerStoredProcedureParameter(8, Integer.class, ParameterMode.OUT);
+            sp.execute();
+            p.setPersonaId((Integer) sp.getOutputParameterValue(8));
+
+            guardarRol(em, p);
+        });
+    }
+
+    @Override
+    public void actualizar(Persona p) {
+        enTransaccion(em -> {
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_actualizar_persona");
+            entrada(sp, 1, Integer.class, p.getPersonaId());
+            entrada(sp, 2, Integer.class, p.getTipoDocumentoId());
+            entrada(sp, 3, String.class, p.getNumeroDocumento());
+            entrada(sp, 4, String.class, p.getCorreo());
+            entrada(sp, 5, String.class, p.getTelefono());
+            entrada(sp, 6, String.class, p.getDireccion());
+            entrada(sp, 7, String.class, p.getEstadoUsuario());
+            entrada(sp, 8, String.class, p.getPasswordHash());
+            sp.execute();
+
+            StoredProcedureQuery spLimpiar = em.createStoredProcedureQuery("sp_limpiar_roles_persona");
+            entrada(spLimpiar, 1, Integer.class, p.getPersonaId());
+            entrada(spLimpiar, 2, String.class, p.getCodigoTipo());
+            spLimpiar.execute();
+
+            guardarRol(em, p);
+        });
+    }
+
+    @Override
+    public void eliminar(int id) {
+        enTransaccion(em -> {
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_eliminar_persona");
+            entrada(sp, 1, Integer.class, id);
+            sp.execute();
+        });
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<TipoDocumento> listarTiposDocumento() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createStoredProcedureQuery("sp_listar_tipos_documento", TipoDocumento.class)
+                     .getResultList();
+        } finally {
+            em.close();
         }
     }
 
     @Override
-    public List<TipoDocumento> listarTiposDocumento() throws SQLException {
-        List<TipoDocumento> lista = new ArrayList<>();
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall("{CALL sp_listar_tipos_documento()}");
-                ResultSet rs = cs.executeQuery()) {
-            while (rs.next()) {
-                lista.add(new TipoDocumento(
-                    rs.getInt("Tipo_Documento_ID"),
-                    rs.getString("Nombre")
-                ));
-            }
+    @SuppressWarnings("unchecked")
+    public List<RolTrabajador> listarRolesTrabajador() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createStoredProcedureQuery("sp_listar_roles_trabajador", RolTrabajador.class)
+                     .getResultList();
+        } finally {
+            em.close();
         }
-        return lista;
     }
 
     @Override
-    public List<RolTrabajador> listarRolesTrabajador() throws SQLException {
-        List<RolTrabajador> lista = new ArrayList<>();
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall("{CALL sp_listar_roles_trabajador()}");
-                ResultSet rs = cs.executeQuery()) {
-            while (rs.next()) {
-                lista.add(new RolTrabajador(
-                    rs.getInt("Rol_Trabajador_ID"),
-                    rs.getString("Nombre")
-                ));
-            }
-        }
-        return lista;
-    }
-
-    @Override
-    public List<Sucursal> listarSucursales() throws SQLException {
+    @SuppressWarnings("unchecked")
+    public List<Sucursal> listarSucursales() {
+        EntityManager em = JPAUtil.getEntityManager();
         List<Sucursal> lista = new ArrayList<>();
-        try (Connection cn = Conexion.getConexion();
-                CallableStatement cs = cn.prepareCall("{CALL sp_listar_sucursales_combo()}");
-                ResultSet rs = cs.executeQuery()) {
-            while (rs.next()) {
+        try {
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_listar_sucursales_combo");
+            List<Object[]> filas = sp.getResultList();
+            for (Object[] r : filas) {
                 Sucursal s = new Sucursal();
-                s.setSucursalId(rs.getInt("Sucursal_ID"));
-                s.setNombre(rs.getString("Nombre"));
+                s.setSucursalId(entero(r[0]));
+                s.setNombre(str(r[1]));
                 lista.add(s);
             }
+            return lista;
+        } finally {
+            em.close();
         }
-        return lista;
     }
 
-
-    private void guardarRol(Connection cn, Persona p) throws SQLException {
+    private void guardarRol(EntityManager em, Persona p) {
         if (p instanceof ClienteNatural c) {
-            try (CallableStatement cs = cn.prepareCall("{CALL sp_guardar_cliente_natural(?, ?, ?, ?, ?, ?)}")) {
-                cs.setInt(1, c.getPersonaId());
-                cs.setString(2, c.getNombres());
-                cs.setString(3, c.getApellidos());
-                setFecha(cs, 4, c.getFechaNacimiento());
-                cs.setString(5, c.getLicenciaConducir());
-                setFecha(cs, 6, c.getFechaVencimientoLicencia());
-                cs.executeUpdate();
-            }
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_guardar_cliente_natural");
+            entrada(sp, 1, Integer.class, c.getPersonaId());
+            entrada(sp, 2, String.class, c.getNombres());
+            entrada(sp, 3, String.class, c.getApellidos());
+            entrada(sp, 4, LocalDate.class, c.getFechaNacimiento());
+            entrada(sp, 5, String.class, c.getLicenciaConducir());
+            entrada(sp, 6, LocalDate.class, c.getFechaVencimientoLicencia());
+            sp.execute();
         } else if (p instanceof ClienteJuridico c) {
-            try (CallableStatement cs = cn.prepareCall("{CALL sp_guardar_cliente_juridico(?, ?, ?, ?)}")) {
-                cs.setInt(1, c.getPersonaId());
-                cs.setString(2, c.getRazonSocial());
-                cs.setString(3, c.getRepresentanteLegal());
-                cs.setString(4, c.getGiroNegocio());
-                cs.executeUpdate();
-            }
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_guardar_cliente_juridico");
+            entrada(sp, 1, Integer.class, c.getPersonaId());
+            entrada(sp, 2, String.class, c.getRazonSocial());
+            entrada(sp, 3, String.class, c.getRepresentanteLegal());
+            entrada(sp, 4, String.class, c.getGiroNegocio());
+            sp.execute();
         } else if (p instanceof Trabajador t) {
-            try (CallableStatement cs = cn.prepareCall("{CALL sp_guardar_trabajador(?, ?, ?, ?, ?, ?)}")) {
-                cs.setInt(1, t.getPersonaId());
-                cs.setInt(2, t.getSucursalId());
-                cs.setInt(3, t.getRolTrabajadorId());
-                cs.setString(4, t.getNombres());
-                cs.setString(5, t.getApellidos());
-                cs.setString(6, t.getCodigoEmpleado());
-                cs.executeUpdate();
+            StoredProcedureQuery sp = em.createStoredProcedureQuery("sp_guardar_trabajador");
+            entrada(sp, 1, Integer.class, t.getPersonaId());
+            entrada(sp, 2, Integer.class, t.getSucursalId());
+            entrada(sp, 3, Integer.class, t.getRolTrabajadorId());
+            entrada(sp, 4, String.class, t.getNombres());
+            entrada(sp, 5, String.class, t.getApellidos());
+            entrada(sp, 6, String.class, t.getCodigoEmpleado());
+            sp.execute();
+        }
+    }
+
+    private void entrada(StoredProcedureQuery sp, int posicion, Class<?> tipo, Object valor) {
+        sp.registerStoredProcedureParameter(posicion, tipo, ParameterMode.IN);
+        sp.setParameter(posicion, valor);
+    }
+
+    private void enTransaccion(Consumer<EntityManager> operacion) {
+        EntityManager em = JPAUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            operacion.accept(em);
+            tx.commit();
+        } catch (RuntimeException e) {
+            if (tx.isActive()) {
+                tx.rollback();
             }
+            throw e;
+        } finally {
+            em.close();
         }
     }
 
-    private void llenarBase(ResultSet rs, Persona p) throws SQLException {
-        p.setPersonaId(rs.getInt("Persona_ID"));
-        p.setTipoDocumentoId(rs.getInt("Tipo_Documento_ID"));
-        p.setNumeroDocumento(rs.getString("Numero_Documento"));
-        p.setCorreo(rs.getString("Correo"));
-        p.setTelefono(rs.getString("Telefono"));
-        p.setDireccion(rs.getString("Direccion"));
-        p.setEstadoUsuario(rs.getString("Estado_Usuario"));
-        p.setPasswordHash(rs.getString("Password_Hash"));
+    private String str(Object o) {
+        return o == null ? null : o.toString();
     }
 
-    private LocalDate fecha(ResultSet rs, String columna) throws SQLException {
-        Date d = rs.getDate(columna);
-        return d == null ? null : d.toLocalDate();
+    private int entero(Object o) {
+        return o == null ? 0 : ((Number) o).intValue();
     }
 
-    private void setFecha(CallableStatement cs, int indice, LocalDate valor) throws SQLException {
-        if (valor == null) {
-            cs.setNull(indice, Types.DATE);
-        } else {
-            cs.setDate(indice, Date.valueOf(valor));
-        }
+    private LocalDate fecha(Object o) {
+        if (o == null) return null;
+        if (o instanceof LocalDate ld) return ld;
+        if (o instanceof Date d) return d.toLocalDate();
+        return LocalDate.parse(o.toString());
     }
 }

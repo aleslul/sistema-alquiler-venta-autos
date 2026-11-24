@@ -1,0 +1,65 @@
+
+body.pagina-inicio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tarjeta-inicio {
+    width: 100%;
+    max-width: 520px;
+    padding: 40px 36px 34px;
+    text-align: center;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    box-shadow: var(--sombra);
+    position: relative;
+    overflow: hidden;
+}
+/* franja superior en degradé de la paleta */
+.tarjeta-inicio::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--celeste), var(--azul), var(--marino), var(--crema));
+}
+
+.tarjeta-inicio h1 { font-size: 28px; margin-bottom: 8px; }
+.tarjeta-inicio .descripcion {
+    margin: 0 0 26px;
+    padding-bottom: 20px;
+    color: var(--texto-suave);
+    border-bottom: 1px solid var(--borde);
+}
+
+.menu-inicio { display: flex; flex-direction: column; gap: 12px; }
+.menu-inicio .btn { padding: 13px 24px; font-size: 15px; }
+
+.nota {
+    margin: 24px 0 0;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 13px;
+    color: #7a5a1c;
+    background: var(--crema-suave);
+    border-left: 4px solid var(--crema);
+    border-radius: var(--radio-sm);
+}
+
+/* ---------- Página de prueba (TestJPA) ---------- */
+.estado-prueba {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    border-radius: var(--radio);
+    font-weight: 600;
+}
+.estado-ok { background: var(--celeste-suave); color: var(--marino); border: 1px solid var(--celeste); }
+.estado-error { background: var(--peligro-suave); color: #8e2f28; border: 1px solid var(--peligro); }
+.estado-prueba .punto { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex: none; }
+
+.detalle-error { margin: 6px 0 0; font-size: 13px; color: var(--texto-suave); word-break: break-word; }
