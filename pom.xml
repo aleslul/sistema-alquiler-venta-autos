@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.becerra</groupId>
-  <artifactId>sistema-alquiler-venta-autos</artifactId>
+  <artifactId>alquilerventa</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>war</packaging>
 
-  <name>sistema-alquiler-venta-autos Maven Webapp</name>
+  <name>alquilerventa Maven Webapp</name>
   <url>http://www.example.com</url>
 
   <properties>
@@ -20,17 +20,11 @@
 
   <dependencies>
 
-      <!-- JPA: Hibernate ORM (trae jakarta.persistence-api 3.1) -->     
-       <dependency>
-      <groupId>org.hibernate.orm</groupId> 
-      <artifactId>hibernate-core</artifactId>       
-      <version>6.6.4.Final</version>    
-     </dependency> 
-
-        <dependency>
-      <groupId>com.microsoft.sqlserver</groupId>
-      <artifactId>mssql-jdbc</artifactId>
-      <version>12.8.1.jre11</version>
+    <!-- Driver MySQL -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>9.3.0</version>
     </dependency>
 
     <!-- JSTL (Tomcat no lo incluye, por eso va dentro del WAR) -->
@@ -66,10 +60,22 @@
         <version>1.18.30</version>
         <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>12.8.1.jre11</version>
+    </dependency>
+ 
+    <dependency>
+        <groupId>org.hibernate.orm</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>6.6.4.Final</version>
+    </dependency>
   </dependencies> 
 
   <build>
-    <finalName>sistema-alquiler-venta-autos</finalName>
+    <finalName>alquilerventa</finalName>
     <pluginManagement>
       <plugins>
         <plugin>
