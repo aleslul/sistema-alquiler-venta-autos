@@ -23,10 +23,9 @@
         <properties>
             <!-- Datos de conexión a SQL Server -->
             <property name="jakarta.persistence.jdbc.driver" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:sqlserver://localhost:1433;databaseName=SistemaAlquilerVentaAutos;encrypt=true;trustServerCertificate=true"/>
-            <property name="jakarta.persistence.jdbc.user" value="admin_autos"/>
-            <property name="jakarta.persistence.jdbc.password" value="123456"/>
-
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:sqlserver://alquilerventa_grupo.mssql.somee.com:1433;databaseName=alquilerventa_grupo;encrypt=true;trustServerCertificate=true"/>
+            <property name="jakarta.persistence.jdbc.user" value="aleslul_SQLLogin_1"/>
+            <property name="jakarta.persistence.jdbc.password" value="3h1jbxqbfs"/>
             <!-- Opciones de Hibernate -->
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
