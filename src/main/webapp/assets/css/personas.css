@@ -1,0 +1,176 @@
+
+/* ---------- Barra de filtros ---------- */
+.filtros {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    background: var(--celeste-suave);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+}
+.filtros-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+}
+.filtros-etiqueta {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--texto-suave);
+}
+
+/* Botones tipo "segmento" */
+.segmento {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+}
+.segmento button {
+    border: 0;
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto-suave);
+    cursor: pointer;
+    transition: background .18s, color .18s;
+}
+.segmento button:hover { color: var(--marino); }
+.segmento button.activo { background: var(--azul); color: var(--blanco); }
+.segmento button:focus-visible { outline: 3px solid var(--celeste); outline-offset: 1px; }
+
+/* El sub-filtro de clientes solo aparece cuando corresponde */
+.subfiltro { display: none; align-items: center; gap: 10px; }
+.subfiltro.visible { display: flex; }
+
+.buscador { flex: 1 1 220px; min-width: 200px; }
+.buscador input {
+    width: 100%;
+    padding: 9px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--texto);
+    background: var(--blanco);
+    border: 1.5px solid var(--borde);
+    border-radius: 999px;
+    transition: border-color .2s, box-shadow .2s;
+}
+.buscador input:focus {
+    outline: none;
+    border-color: var(--azul);
+    box-shadow: 0 0 0 4px rgba(68, 91, 219, .15);
+}
+
+.contador { font-size: 13px; color: var(--texto-suave); margin: 0 0 10px; }
+.contador strong { color: var(--marino); }
+
+/* ---------- Tabla ---------- */
+.tabla-contenedor {
+    overflow-x: auto;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+}
+.tabla { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.tabla thead th {
+    background: var(--marino);
+    color: var(--blanco);
+    text-align: left;
+    padding: 13px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    white-space: nowrap;
+}
+.tabla td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+}
+.tabla tbody tr:last-child td { border-bottom: 0; }
+.tabla tbody tr:nth-child(even) { background: #f9fbfe; }
+.tabla tbody tr:hover { background: var(--celeste-suave); }
+
+.celda-principal { font-weight: 600; color: var(--marino); }
+.celda-secundaria { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; color: var(--texto-suave); }
+.celda-id { color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+
+.vacio { text-align: center; color: var(--texto-suave); padding: 32px !important; font-style: italic; }
+
+/* Etiquetas por tipo de persona */
+.tipo {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.tipo-natural   { background: var(--celeste-suave); color: var(--marino); border: 1px solid var(--celeste); }
+.tipo-juridico  { background: var(--marino); color: var(--blanco); border: 1px solid var(--marino); }
+.tipo-trabajador{ background: var(--crema-suave); color: #7a5a1c; border: 1px solid var(--crema); }
+.tipo-ninguno   { background: #eef1f6; color: var(--texto-suave); border: 1px solid var(--borde); }
+
+/* ---------- Formulario ---------- */
+.formulario .campo { margin-bottom: 16px; }
+.formulario label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--marino);
+}
+.formulario input[type=text],
+.formulario input[type=email],
+.formulario input[type=password],
+.formulario input[type=date],
+.formulario input[type=number],
+.formulario select {
+    width: 100%;
+    padding: 10px 13px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--texto);
+    background: #fbfdff;
+    border: 1.5px solid var(--borde);
+    border-radius: var(--radio-sm);
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.formulario input:focus,
+.formulario select:focus {
+    outline: none;
+    background: var(--blanco);
+    border-color: var(--azul);
+    box-shadow: 0 0 0 4px rgba(68, 91, 219, .15);
+}
+.formulario input[readonly] {
+    background: #eef3f9;
+    color: var(--texto-suave);
+    cursor: not-allowed;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.seccion-tipo {
+    margin: 8px 0 18px;
+    padding: 8px 20px 14px;
+    background: var(--celeste-suave);
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--crema);
+    border-radius: var(--radio);
+}
+
+@media (max-width: 640px) {
+    .grid-2 { grid-template-columns: 1fr; gap: 0; }
+    .filtros { padding: 14px; }
+}

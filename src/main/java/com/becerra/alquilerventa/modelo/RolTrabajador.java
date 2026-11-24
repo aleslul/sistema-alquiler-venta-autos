@@ -1,7 +1,19 @@
 package com.becerra.alquilerventa.modelo;
 
-public class RolTrabajador {
+import jakarta.persistence.*;
+import java.io.Serializable;
+
+@Entity
+@Table(name = "Rol_Trabajador")
+public class RolTrabajador implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Rol_Trabajador_ID")
     private int rolTrabajadorId;
+
+    @Column(name = "Nombre", length = 50, nullable = false, unique = true)
     private String nombre;
 
     public RolTrabajador() {}

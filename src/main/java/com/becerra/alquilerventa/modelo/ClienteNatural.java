@@ -1,12 +1,25 @@
 package com.becerra.alquilerventa.modelo;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
+@Entity
+@Table(name = "Cliente_Natural")
+@PrimaryKeyJoinColumn(name = "Cliente_ID")
 public class ClienteNatural extends Cliente {
+    @Column(name = "Nombres", length = 100, nullable = false)
     private String nombres;
+
+    @Column(name = "Apellidos", length = 100, nullable = false)
     private String apellidos;
+
+    @Column(name = "Fecha_Nacimiento", nullable = false)
     private LocalDate fechaNacimiento;
+
+    @Column(name = "Licencia_Conducir", length = 50)
     private String licenciaConducir;
+
+    @Column(name = "Fecha_Vencimiento_Licencia")
     private LocalDate fechaVencimientoLicencia;
 
     public ClienteNatural() { setTipoCliente("Natural"); }

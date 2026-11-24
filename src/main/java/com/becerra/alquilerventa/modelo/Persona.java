@@ -1,21 +1,51 @@
 package com.becerra.alquilerventa.modelo;
 
-public class Persona {
+import jakarta.persistence.*;
+import java.io.Serializable;
+
+@Entity
+@Table(name = "Persona")
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Persona implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public static final String NINGUNO = "NINGUNO";
     public static final String CLIENTE_NATURAL = "CLIENTE_NATURAL";
     public static final String CLIENTE_JURIDICO = "CLIENTE_JURIDICO";
     public static final String TRABAJADOR = "TRABAJADOR";
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Persona_ID")
     private int personaId;
+
+    @Column(name = "Tipo_Documento_ID", nullable = false)
     private int tipoDocumentoId;
+
+    @Column(name = "Numero_Documento", length = 50, nullable = false, unique = true)
     private String numeroDocumento;
+
+    @Column(name = "Correo", length = 100, nullable = false, unique = true)
     private String correo;
+
+    @Column(name = "Telefono", length = 20)
     private String telefono;
+
+    @Column(name = "Direccion", length = 200)
     private String direccion;
+
+    @Column(name = "Estado_Usuario", length = 50, nullable = false)
     private String estadoUsuario;
+
+    @Column(name = "Password_Hash", length = 255)
     private String passwordHash;
+
+    // Campos auxiliares para la vista (no son columnas de la tabla Persona)
+    @Transient
     private String nombreTipoDocumento;
+    @Transient
     private String tipoRegistro;
+    @Transient
     private String nombreCompleto;
 
     public Persona() {}
